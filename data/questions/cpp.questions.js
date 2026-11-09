@@ -260,3 +260,29 @@ window.CodeQuestQuestionBanks.cpp = [
   }
 
 ]; // end cpp questions
+
+// C++ trace questions practice integer expressions, branches, loops, array
+// indexing, and function returns with short compilable-style snippets.
+window.CodeQuestQuestionBanks.cpp.push(...Array.from({ length: 55 }, (_, i) => {
+  const n=i+2;
+  const templates=[
+    {topic:'operators',code:`int value = ${n};\ncout << value * value - value;`,answer:String(n*n-n),explain:'Multiplication is evaluated before subtraction.'},
+    {topic:'conditions',code:`int number = ${n};\nif (number % 2 == 0) cout << "even";\nelse cout << "odd";`,answer:n%2===0?'even':'odd',explain:'The remainder selects the even or odd branch.'},
+    {topic:'loops',code:`int total = 0;\nfor (int k = 1; k < ${n%5+3}; ++k) total += k;\ncout << total;`,answer:String(Array.from({length:n%5+2},(_,j)=>j+1).reduce((a,b)=>a+b,0)),explain:'The loop stops before the strict upper bound.'},
+    {topic:'arrays',code:`int values[] = {${n}, ${n+1}, ${n+2}};\ncout << values[2] - values[0];`,answer:'2',explain:'Array indexing starts at zero; subtract the first element from the third.'},
+    {topic:'functions',code:`int adjust(int x) { return x * 3 - 1; }\ncout << adjust(${n});`,answer:String(n*3-1),explain:'The function returns three times its argument minus one.'},
+    {topic:'references',code:`int count = ${n};\nint& alias = count;\nalias += 2;\ncout << count;`,answer:String(n+2),explain:'alias is a reference to count, so updating it changes count.'},
+    {topic:'pointers',code:`int value = ${n};\nint* ptr = &value;\n*ptr += 1;\ncout << value;`,answer:String(n+1),explain:'Dereferencing ptr updates the value stored at its address.'}
+  ];
+  const t=templates[i%templates.length], value=Number(t.answer);
+  const options=Number.isFinite(value)
+    ? [...new Set([t.answer,String(value+1),String(value-1),String(value+2)])]
+    : [...new Set([t.answer,'even','odd','unknown'])];
+  while(options.length<4) options.push(`result-${options.length}`);
+  return {id:`cpp-q${String(i+18).padStart(3,'0')}`,language:'cpp',
+    chapterId:['cpp-ch1','cpp-ch2','cpp-ch3','cpp-ch4'][i%4],topic:t.topic,
+    difficulty:i%5===0?'intermediate':'beginner',type:'predict_output',
+    question:`Predict the output (trace ${i+1}):\n\n${t.code}`,options,
+    correctAnswer:t.answer,explanation:t.explain,
+    hint:'Trace each statement and consider how indexing, references, or loop bounds work.',xp:5};
+}));

@@ -747,6 +747,7 @@ let AppState = {
     completedLessons: [],
     completedChapters: [],
     completedLessonXP: {},  // lessonId -> true, prevents re-farming
+    questionXPRecords: {},   // lesson exercise id -> true, prevents answer XP farming
     dailyMinutes: 0,
     dailyGoalDate: null,
     achievements: []
@@ -1411,11 +1412,13 @@ function renderLessonStep() {
   const feedback = document.getElementById('lesson-feedback');
   const checkBtn = document.getElementById('lesson-check-btn');
   const contBtn  = document.getElementById('lesson-continue-btn');
+  const retryBtn = document.getElementById('lesson-retry-btn');
 
   feedback.className = 'lesson-feedback';
   feedback.innerHTML = '';
   checkBtn.classList.add('hidden');
   contBtn.classList.add('hidden');
+  retryBtn?.classList.add('hidden');
 
   selectedAnswer = null;
   arrangedBlocks = [];
@@ -1453,7 +1456,7 @@ function buildIntroHTML(lesson) {
   const codeHTML  = lesson.codeExample ? `
     <div class="code-block">
       <span class="code-lang">${lesson.codeExample.lang}</span>
-      <pre>${lesson.codeExample.code}</pre>
+      <pre><code>${escHtml(lesson.codeExample.code)}</code></pre>
     </div>` : '';
 
   return `
@@ -1477,7 +1480,7 @@ function buildExerciseHTML(lesson) {
   let content = '';
 
   if (ex.type === 'multiple_choice' || ex.type === 'predict_output' || ex.type === 'find_mistake') {
-    const codeSnippet = ex.code ? `<div class="code-block"><pre>${ex.code}</pre></div>` : '';
+    const codeSnippet = ex.code ? `<div class="code-block"><pre><code>${escHtml(ex.code)}</code></pre></div>` : '';
     const options = ex.options.map((opt, i) => `
       <button class="choice-option" data-index="${i}" onclick="selectMCOption(this, ${i})">
         <span class="choice-option-letter">${String.fromCharCode(65 + i)}</span>
@@ -1612,14 +1615,17 @@ function checkAnswer() {
   const feedback = document.getElementById('lesson-feedback');
   const checkBtn = document.getElementById('lesson-check-btn');
   const contBtn  = document.getElementById('lesson-continue-btn');
+  const retryBtn = document.getElementById('lesson-retry-btn');
+  if (!currentLesson || !ex || checkBtn.disabled || !checkBtn.classList.contains('hidden') === false) return;
   let correct    = false;
 
   if (ex.type === 'multiple_choice' || ex.type === 'predict_output' || ex.type === 'find_mistake') {
     correct = selectedAnswer === ex.correct;
     document.querySelectorAll('.choice-option').forEach((btn, i) => {
-      if (i === ex.correct) btn.classList.add('correct');
-      else if (i === selectedAnswer && !correct) btn.classList.add('incorrect');
-      btn.onclick = null; btn.style.pointerEvents = 'none';
+      if (correct) {
+        if (i === ex.correct) btn.classList.add('correct');
+        btn.disabled = true;
+      } else if (i === selectedAnswer) btn.classList.add('incorrect');
     });
 
   } else if (ex.type === 'fill_blank') {
@@ -1627,7 +1633,7 @@ function checkAnswer() {
     const userVal = input ? input.value.trim().toLowerCase() : '';
     const expected = ex.blanks[0].answer.toLowerCase();
     correct = userVal === expected;
-    if (input) { input.classList.add(correct ? 'correct' : 'incorrect'); input.disabled = true; }
+    if (input) { input.classList.add(correct ? 'correct' : 'incorrect'); input.disabled = correct; }
 
   } else if (ex.type === 'arrange') {
     const userOrder = arrangedBlocks.map(b => b.text);
@@ -1639,27 +1645,74 @@ function checkAnswer() {
   }
 
   checkBtn.classList.add('hidden');
-  contBtn.classList.remove('hidden');
-  contBtn.innerHTML = 'Continue <i data-lucide="arrow-right"></i>';
 
   if (correct) {
+    contBtn.classList.remove('hidden');
+    contBtn.innerHTML = 'Continue <i data-lucide="arrow-right"></i>';
+    if (retryBtn) retryBtn.classList.add('hidden');
     AudioManager.playSFX('correct');
     feedback.className = 'lesson-feedback success';
     feedback.innerHTML = `<i data-lucide="check-circle"></i> <span>Correct! ${ex.explanation}</span>`;
-    awardXP(5, null); // small XP for correct answer
+    AppState.progress.questionXPRecords = AppState.progress.questionXPRecords || {};
+    const exerciseKey = `${currentLesson.lesson.id}:exercise`;
+    if (!AppState.progress.questionXPRecords[exerciseKey]) {
+      AppState.progress.questionXPRecords[exerciseKey] = true;
+      awardXP(5, null);
+      saveState();
+    }
   } else {
+    contBtn.classList.add('hidden');
+    if (retryBtn) retryBtn.classList.remove('hidden');
     AudioManager.playSFX('wrong');
     feedback.className = 'lesson-feedback error';
-    feedback.innerHTML = `<i data-lucide="x-circle"></i> <span>Almost! ${ex.explanation}</span>`;
+    const answer = (ex.type === 'multiple_choice' || ex.type === 'predict_output' || ex.type === 'find_mistake')
+      ? ` Review the options and try again. Hint: ${ex.hint || ex.explanation}`
+      : ` Hint: ${ex.hint || ex.explanation}`;
+    feedback.innerHTML = `<i data-lucide="x-circle"></i> <span>Not quite.${answer}</span>`;
   }
 
   safeCreateIcons();
+}
+
+function retryLessonAnswer() {
+  const ex = currentLesson?.lesson?.exercise;
+  if (!ex) return;
+  const feedback = document.getElementById('lesson-feedback');
+  const retryBtn = document.getElementById('lesson-retry-btn');
+  const checkBtn = document.getElementById('lesson-check-btn');
+  const contBtn = document.getElementById('lesson-continue-btn');
+  selectedAnswer = null;
+  if (ex.type === 'multiple_choice' || ex.type === 'predict_output' || ex.type === 'find_mistake') {
+    document.querySelectorAll('.choice-option').forEach(btn => {
+      btn.disabled = false;
+      btn.classList.remove('selected', 'correct', 'incorrect');
+      btn.onclick = function () { selectMCOption(this, Number(this.dataset.index)); };
+    });
+  } else if (ex.type === 'fill_blank') {
+    const input = document.getElementById('fitb-input-0');
+    if (input) { input.disabled = false; input.value = ''; input.classList.remove('correct', 'incorrect'); }
+  } else if (ex.type === 'arrange') {
+    arrangedBlocks = [];
+    bankState.forEach((block, idx) => {
+      block.used = false;
+      const bankBtn = document.querySelector(`.bank-block[data-idx="${idx}"]`);
+      if (bankBtn) { bankBtn.disabled = false; bankBtn.classList.remove('used'); }
+    });
+    const zone = document.getElementById('arrange-zone');
+    if (zone) { zone.querySelectorAll('.code-block-item').forEach(el => el.remove()); zone.style.borderColor = ''; zone.style.background = ''; }
+  }
+  if (feedback) { feedback.className = 'lesson-feedback'; feedback.textContent = ''; }
+  retryBtn?.classList.add('hidden');
+  checkBtn.classList.remove('hidden');
+  checkBtn.disabled = ex.type !== 'arrange';
+  contBtn?.classList.add('hidden');
 }
 
 /* ─── SECTION 20: LESSON CONTINUE / COMPLETE ────────────── */
 function lessonContinue() {
   AudioManager.playSFX('click');
   const step = currentLessonSteps[currentStepIdx];
+  if (step === 'exercise' && document.getElementById('lesson-continue-btn').classList.contains('hidden')) return;
 
   if (step === 'complete') {
     // Fix: award full XP FIRST (before markLessonComplete sets completedLessonXP),
@@ -2188,7 +2241,7 @@ function validateQuestionBank(lang, questions) {
 }
 
 function getFilteredQuestions(lang, { topic, difficulty, count } = {}) {
-  let questions = window.CodeQuestQuestionBanks[lang] || [];
+  let questions = [...(window.CodeQuestQuestionBanks[lang] || [])];
   if (topic)      questions = questions.filter(q => q.topic === topic);
   if (difficulty) questions = questions.filter(q => q.difficulty === difficulty);
   // Fisher-Yates shuffle
@@ -2606,16 +2659,41 @@ function openQBCard(lang) {
         <div class="form-row" style="flex:1;min-width:160px">
           <label for="qb-count">Questions</label>
           <select id="qb-count" class="form-input">
-            ${[5,10,15,20].filter(n => n <= questions.length)
+            ${[5,10,15,20,30,50,100].filter(n => n <= questions.length)
                .map(n => `<option value="${n}">${n} questions</option>`).join('')}
+            <option value="custom">Custom quantity</option>
           </select>
         </div>
       </div>
+      <div class="form-row hidden" id="qb-custom-row" style="margin-top:12px">
+        <label for="qb-custom-count">Custom quantity (1–<span id="qb-custom-max">${questions.length}</span>)</label>
+        <input id="qb-custom-count" class="form-input" type="number" min="1" max="${questions.length}" value="${Math.min(5, questions.length)}" />
+      </div>
+      <p id="qb-availability" style="color:var(--text-muted);font-size:0.85rem;margin-top:10px">
+        ${CURRICULUM[lang].name} Question Bank · ${questions.length} questions available
+      </p>
       <button type="button" class="btn btn-primary" style="margin-top:16px"
         onclick="launchQBSession('${lang}')">
         <i data-lucide="play"></i> Start Session
       </button>
     `;
+    const difficultyEl = document.getElementById('qb-difficulty');
+    const countSelectEl = document.getElementById('qb-count');
+    const refreshOptions = () => {
+      const filteredCount = questions.filter(q => !difficultyEl.value || q.difficulty === difficultyEl.value).length;
+      const availability = document.getElementById('qb-availability');
+      if (availability) availability.textContent = `${CURRICULUM[lang].name} Question Bank · ${filteredCount} questions available`;
+      const customCount = document.getElementById('qb-custom-count');
+      const customMax = document.getElementById('qb-custom-max');
+      if (customCount) { customCount.max = filteredCount; if (Number(customCount.value) > filteredCount) customCount.value = filteredCount; }
+      if (customMax) customMax.textContent = filteredCount;
+      [...countSelectEl.options].forEach(option => { if (option.value !== 'custom') option.disabled = Number(option.value) > filteredCount; });
+      const customRow = document.getElementById('qb-custom-row');
+      if (customRow) customRow.classList.toggle('hidden', countSelectEl.value !== 'custom');
+    };
+    difficultyEl.addEventListener('change', refreshOptions);
+    countSelectEl.addEventListener('change', refreshOptions);
+    refreshOptions();
     safeCreateIcons();
   }).catch(err => {
     panel.innerHTML = `
@@ -2629,7 +2707,16 @@ function openQBCard(lang) {
 function launchQBSession(lang) {
   AudioManager.playSFX('click');
   const difficulty = document.getElementById('qb-difficulty')?.value || '';
-  const count      = parseInt(document.getElementById('qb-count')?.value) || 5;
+  const countSelect = document.getElementById('qb-count');
+  const count = countSelect?.value === 'custom'
+    ? Number(document.getElementById('qb-custom-count')?.value)
+    : Number(countSelect?.value);
+  const available = (window.CodeQuestQuestionBanks[lang] || [])
+    .filter(q => !difficulty || q.difficulty === difficulty).length;
+  if (!Number.isInteger(count) || count < 1 || count > available) {
+    alert(`Choose between 1 and ${available} available questions.`);
+    return;
+  }
   startPracticeSession(lang, { difficulty: difficulty || undefined, count });
 }
 
@@ -2657,21 +2744,26 @@ function generateCertId() {
 
 function isCourseComplete(lang) {
   const curriculum = CURRICULUM[lang];
-  return curriculum.chapters.every(ch =>
-    ch.lessons.every(l => isLessonCompleted(l.id))
+  return !!curriculum && curriculum.chapters.every(ch =>
+    ch.lessons.every(l => isLessonCompleted(l.id)) &&
+    AppState.progress.completedChapters.includes(ch.id)
   );
 }
 
 // Final assessment: pick 10 random questions from the question bank
 async function startFinalAssessment(lang) {
   AudioManager.playSFX('click');
+  if (!isCourseComplete(lang)) {
+    alert(`Complete every ${CURRICULUM[lang].name} lesson and chapter first to unlock the final assessment and certificate.`);
+    return;
+  }
   try {
     const questions = await loadQuestionBank(lang);
-    if (questions.length < 5) {
-      alert('Not enough questions available for a final assessment. Please check back later.');
+    if (questions.length < 10) {
+      alert('The final assessment requires 10 questions, but this question bank does not have enough yet.');
       return;
     }
-    const selected = getFilteredQuestions(lang, { count: Math.min(10, questions.length) });
+    const selected = getFilteredQuestions(lang, { count: 10 });
     practiceSession = {
       lang,
       questions: selected,
@@ -2688,6 +2780,7 @@ async function startFinalAssessment(lang) {
 }
 
 function issueCertificate(lang, pct) {
+  if (!isCourseComplete(lang)) return null;
   const tier = getCertTier(pct);
   if (!tier) return null;
 

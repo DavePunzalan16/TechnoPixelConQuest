@@ -284,3 +284,31 @@ window.CodeQuestQuestionBanks.python = [
   }
 
 ]; // end python questions
+
+// Additional trace questions use distinct values and code paths so students
+// practice evaluating real Python expressions rather than memorizing prose.
+window.CodeQuestQuestionBanks.python.push(...Array.from({ length: 60 }, (_, i) => {
+  const n = i + 2;
+  const templates = [
+    { topic: 'operators', code: `print(${n} ** 2 - ${n})`, answer: String(n * n - n), explain: 'Exponentiation happens before subtraction.' },
+    { topic: 'conditions', code: `x = ${n}\nprint('high' if x % 2 == 0 else 'odd')`, answer: n % 2 === 0 ? 'high' : 'odd', explain: 'The conditional expression selects a value based on the remainder.' },
+    { topic: 'loops', code: `total = 0\nfor k in range(1, ${n % 5 + 3}):\n    total += k\nprint(total)`, answer: String(Array.from({length:n%5+2}, (_,j)=>j+1).reduce((a,b)=>a+b,0)), explain: 'range stops before its ending value; add each included integer once.' },
+    { topic: 'lists', code: `values = [${n}, ${n + 1}, ${n + 2}]\nprint(values[-2] * 2)`, answer: String((n + 1) * 2), explain: 'Index -2 selects the second item from the end.' },
+    { topic: 'functions', code: `def scale(value):\n    return value * 3 - 1\nprint(scale(${n}))`, answer: String(n * 3 - 1), explain: 'The argument is bound to value and the returned expression is printed.' },
+    { topic: 'data_types', code: `word = 'py' * ${n % 4 + 1}\nprint(len(word))`, answer: String(2 * (n % 4 + 1)), explain: 'String repetition repeats the text, and len counts all characters.' }
+  ];
+  const t = templates[i % templates.length];
+  const numeric = Number(t.answer);
+  const options = Number.isFinite(numeric)
+    ? [...new Set([t.answer, String(numeric + 1), String(numeric - 1), String(numeric + 2)])]
+    : [...new Set([t.answer, 'high', 'odd', 'low'])];
+  while (options.length < 4) options.push(`result-${options.length}`);
+  return {
+    id: `py-q${String(i + 19).padStart(3, '0')}`, language: 'python',
+    chapterId: ['py-ch1','py-ch2','py-ch3','py-ch4'][i % 4], topic: t.topic,
+    difficulty: i % 5 === 0 ? 'intermediate' : 'beginner', type: 'predict_output',
+    question: `Predict the output (trace ${i + 1}):\n\n${t.code}`,
+    options, correctAnswer: t.answer, explanation: t.explain,
+    hint: 'Trace each operation in order, paying attention to the language rules.', xp: 5
+  };
+}));

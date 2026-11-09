@@ -260,3 +260,28 @@ window.CodeQuestQuestionBanks.java = [
   }
 
 ]; // end java questions
+
+// Distinct Java tracing exercises cover integer arithmetic, arrays, strings,
+// loop bounds, and method return values using small readable programs.
+window.CodeQuestQuestionBanks.java.push(...Array.from({ length: 50 }, (_, i) => {
+  const n = i + 2;
+  const templates = [
+    { topic: 'operators', code: `int value = ${n};\nSystem.out.println(value * value - value);`, answer: String(n*n-n), explain: 'Multiplication is evaluated before subtraction.' },
+    { topic: 'conditions', code: `int score = ${n};\nif (score % 2 == 0) System.out.println("even");\nelse System.out.println("odd");`, answer: n%2===0?'even':'odd', explain: 'The remainder determines which branch executes.' },
+    { topic: 'loops', code: `int total = 0;\nfor (int k = 1; k <= ${n%5+2}; k++) total += k;\nSystem.out.println(total);`, answer: String(Array.from({length:n%5+2},(_,j)=>j+1).reduce((a,b)=>a+b,0)), explain: 'The inclusive <= bound includes every integer from 1 through the limit.' },
+    { topic: 'arrays', code: `int[] values = {${n}, ${n+1}, ${n+2}};\nSystem.out.println(values[1] * 2);`, answer: String((n+1)*2), explain: 'Java arrays start at index zero, so values[1] is the middle element.' },
+    { topic: 'methods', code: `static int adjust(int x) { return x * 3 - 1; }\nSystem.out.println(adjust(${n}));`, answer: String(n*3-1), explain: 'The method returns three times its argument minus one.' },
+    { topic: 'strings', code: `String text = "java".substring(0, ${n%3+1});\nSystem.out.println(text.length());`, answer: String(n%3+1), explain: 'substring includes the start index and excludes the end index.' }
+  ];
+  const t=templates[i%templates.length], value=Number(t.answer);
+  const options=Number.isFinite(value)
+    ? [...new Set([t.answer,String(value+1),String(value-1),String(value+2)])]
+    : [...new Set([t.answer,'even','odd','unknown'])];
+  while(options.length<4) options.push(`result-${options.length}`);
+  return { id:`java-q${String(i+18).padStart(3,'0')}`, language:'java',
+    chapterId:['java-ch1','java-ch2','java-ch3','java-ch4'][i%4], topic:t.topic,
+    difficulty:i%5===0?'intermediate':'beginner', type:'predict_output',
+    question:`Predict the output (trace ${i+1}):\n\n${t.code}`, options,
+    correctAnswer:t.answer, explanation:t.explain,
+    hint:'Trace the statements in order and check the loop or index boundary.', xp:5 };
+}));
