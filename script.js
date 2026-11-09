@@ -2230,14 +2230,24 @@ function validateQuestionBank(lang, questions) {
     else if (!VALID_DIFF.includes(q.difficulty)) err = `invalid difficulty: ${q.difficulty}`;
     else if (!q.topic)                      err = 'missing topic';
     else if (!q.question)                   err = 'missing question text';
-    else if (!q.correctAnswer && !q.correctOrder) err = 'missing correct answer';
+    else if (!q.correctAnswer && !q.correctOrder && !q.acceptedAnswers?.length) err = 'missing correct answer';
 
     if (err) { console.warn(`[QB] Skipping question ${q.id || '?'}: ${err}`); continue; }
     if (valid.length >= QB_MAX) { console.warn(`[QB] ${lang}: hit ${QB_MAX} question limit`); break; }
     ids.add(q.id);
+    if (!q.chapterId) q.chapterId = inferQuestionChapter(lang, q.topic);
     valid.push(q);
   }
   return valid;
+}
+
+function inferQuestionChapter(lang, topic) {
+  const maps = {
+    python: { introduction:'py-ch1',variables:'py-ch1',data_types:'py-ch1',operators:'py-ch2',conditions:'py-ch2',loops:'py-ch3',functions:'py-ch4',lists:'py-ch4' },
+    java: { introduction:'java-ch1',variables:'java-ch1',data_types:'java-ch1',operators:'java-ch2',conditions:'java-ch2',loops:'java-ch3',functions:'java-ch4',methods:'java-ch4',arrays:'java-ch4',strings:'java-ch4' },
+    cpp: { introduction:'cpp-ch1',variables:'cpp-ch1',data_types:'cpp-ch1',operators:'cpp-ch2',conditions:'cpp-ch2',loops:'cpp-ch3',functions:'cpp-ch4',arrays:'cpp-ch4',strings:'cpp-ch4',pointers:'cpp-ch4',references:'cpp-ch4' }
+  };
+  return maps[lang]?.[topic] || `${lang}-ch1`;
 }
 
 function getFilteredQuestions(lang, { topic, difficulty, count } = {}) {
