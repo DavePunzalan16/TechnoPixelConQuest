@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technopixel CodeQuest – The Knowledge Adventure</title>
+  <meta name="description" content="Learn Python, Java, and C++ through an engaging gamified adventure with Technopixie as your guide.">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Devicon for language logos -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.15.1/devicon.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/branding/codequest_icon.png" type="image/png">
+</head>
+<body>
+
+  <!-- ===================== LOADING SCREEN ===================== -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <img src="assets/branding/loading_logo.png" alt="CodeQuest Loading" class="loading-logo" onerror="this.style.display='none'">
+      <div class="loading-brand">
+        <img src="assets/branding/codequest_logo.png" alt="Technopixel CodeQuest" class="brand-logo-loading" onerror="this.style.display='none'">
+      </div>
+      <div class="loading-bar-wrap">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <p class="loading-text">Preparing your adventure...</p>
+    </div>
+  </div>
+
+  <!-- ===================== ONBOARDING OVERLAY ===================== -->
+  <div id="onboarding-overlay" class="onboarding-overlay hidden">
+
+    <!-- Progress dots -->
+    <div class="onboarding-progress">
+      <div class="ob-dot active" data-step="1"></div>
+      <div class="ob-dot" data-step="2"></div>
+      <div class="ob-dot" data-step="3"></div>
+      <div class="ob-dot" data-step="4"></div>
+      <div class="ob-dot" data-step="5"></div>
+      <div class="ob-dot" data-step="6"></div>
+    </div>
+
+    <!-- STEP 1: Welcome -->
+    <div class="ob-step active" id="ob-step-1">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_idle_spritesheet.gif"
+             alt="Technopixie waving hello"
+             class="ob-mascot"
+             onerror="this.src='assets/character/technopixie.png'">
+      </div>
+      <img src="assets/branding/codequest_logo.png" alt="CodeQuest" class="ob-logo" onerror="this.style.display='none'">
+      <h1 class="ob-title">Welcome to CodeQuest!</h1>
+      <div class="dialogue-bubble">
+        <p>"Hey, future developer! I'm <strong>Technopixie</strong>, your companion on this coding adventure. Ready to learn something awesome?"</p>
+      </div>
+      <button type="button" class="btn btn-primary btn-large" id="ob-begin-btn" onclick="obNext()">
+        <i data-lucide="zap"></i> Let's Begin!
+      </button>
+    </div>
+
+    <!-- STEP 2: Experience Level -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_thinking.png"
+             alt="Technopixie thinking"
+             class="ob-mascot ob-mascot-sm"
+             onerror="this.src='assets/character/technopixie_portrait.png'">
+      </div>
+      <h2 class="ob-question">How much programming experience do you have?</h2>
+      <div class="ob-choices" id="exp-choices">
+        <button type="button" class="ob-choice-btn" data-value="beginner" onclick="selectChoice('experience', 'beginner', this)">
+          <span class="choice-icon">🌱</span>
+          <span class="choice-label">Complete Beginner</span>
+          <span class="choice-desc">Never written a line of code</span>
+        </button>
+        <button type="button" class="ob-choice-btn" data-value="some" onclick="selectChoice('experience', 'some', this)">
+          <span class="choice-icon">📖</span>
+          <span class="choice-label">I Know a Little</span>
+          <span class="choice-desc">Seen some code before</span>
+        </button>
+        <button type="button" class="ob-choice-btn" data-value="some-coding" onclick="selectChoice('experience', 'some-coding', this)">
+          <span class="choice-icon">💻</span>
+          <span class="choice-label">I've Written Some Code</span>
+          <span class="choice-desc">Done small projects or exercises</span>
+        </button>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="btn btn-ghost" onclick="obBack()"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="button" class="btn btn-primary" id="ob-next-2" onclick="obNext()" disabled>Continue <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Language Selection -->
+    <div class="ob-step" id="ob-step-3">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_portrait.png"
+             alt="Technopixie"
+             class="ob-mascot ob-mascot-sm"
+             onerror="this.src='assets/character/technopixie.png'">
+      </div>
+      <h2 class="ob-question">Which programming language would you like to learn?</h2>
+      <div class="language-cards" id="lang-cards">
+        <button type="button" class="lang-card" data-lang="python" onclick="selectLanguage('python', this)">
+          <span class="lang-card-icon">
+            <i class="devicon-python-plain colored"></i>
+          </span>
+          <span class="lang-card-info">
+            <span class="lang-card-name">Python</span>
+            <span class="lang-card-desc">Start coding with a beginner-friendly and versatile language.</span>
+          </span>
+          <span class="lang-check"><i data-lucide="check-circle-2"></i></span>
+        </button>
+        <button type="button" class="lang-card" data-lang="java" onclick="selectLanguage('java', this)">
+          <span class="lang-card-icon">
+            <i class="devicon-java-plain colored"></i>
+          </span>
+          <span class="lang-card-info">
+            <span class="lang-card-name">Java</span>
+            <span class="lang-card-desc">Learn object-oriented programming and build strong foundations.</span>
+          </span>
+          <span class="lang-check"><i data-lucide="check-circle-2"></i></span>
+        </button>
+        <button type="button" class="lang-card" data-lang="cpp" onclick="selectLanguage('cpp', this)">
+          <span class="lang-card-icon">
+            <i class="devicon-cplusplus-plain colored"></i>
+          </span>
+          <span class="lang-card-info">
+            <span class="lang-card-name">C++</span>
+            <span class="lang-card-desc">Explore programming fundamentals, performance, and memory concepts.</span>
+          </span>
+          <span class="lang-check"><i data-lucide="check-circle-2"></i></span>
+        </button>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="btn btn-ghost" onclick="obBack()"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="button" class="btn btn-primary" id="ob-next-3" onclick="obNext()" disabled>Continue <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Learning Motivation -->
+    <div class="ob-step" id="ob-step-4">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_portrait.png"
+             alt="Technopixie"
+             class="ob-mascot ob-mascot-sm"
+             onerror="this.src='assets/character/technopixie.png'">
+      </div>
+      <h2 class="ob-question">What's your main reason for learning programming?</h2>
+      <div class="ob-choices" id="motivation-choices">
+        <button type="button" class="ob-choice-btn" data-value="school" onclick="selectChoice('motivation', 'school', this)">
+          <span class="choice-icon">🎓</span>
+          <span class="choice-label">School &amp; Academic</span>
+          <span class="choice-desc">Academic requirements and coursework</span>
+        </button>
+        <button type="button" class="ob-choice-btn" data-value="projects" onclick="selectChoice('motivation', 'projects', this)">
+          <span class="choice-icon">🚀</span>
+          <span class="choice-label">Build Projects</span>
+          <span class="choice-desc">Create my own apps and games</span>
+        </button>
+        <button type="button" class="ob-choice-btn" data-value="career" onclick="selectChoice('motivation', 'career', this)">
+          <span class="choice-icon">💼</span>
+          <span class="choice-label">Career Preparation</span>
+          <span class="choice-desc">Prepare for a programming career</span>
+        </button>
+        <button type="button" class="ob-choice-btn" data-value="explore" onclick="selectChoice('motivation', 'explore', this)">
+          <span class="choice-icon">🔍</span>
+          <span class="choice-label">Explore &amp; Discover</span>
+          <span class="choice-desc">Just curious about coding</span>
+        </button>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="btn btn-ghost" onclick="obBack()"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="button" class="btn btn-primary" id="ob-next-4" onclick="obNext()" disabled>Continue <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 5: Daily Goal -->
+    <div class="ob-step" id="ob-step-5">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_portrait.png"
+             alt="Technopixie"
+             class="ob-mascot ob-mascot-sm"
+             onerror="this.src='assets/character/technopixie.png'">
+      </div>
+      <h2 class="ob-question">How much time can you spend learning each day?</h2>
+      <div class="ob-choices time-choices" id="time-choices">
+        <button type="button" class="ob-choice-btn time-btn" data-value="5" onclick="selectChoice('dailyGoal', '5', this)">
+          <span class="choice-icon">⚡</span>
+          <span class="choice-label">5 Minutes</span>
+          <span class="choice-desc">Quick daily practice</span>
+        </button>
+        <button type="button" class="ob-choice-btn time-btn" data-value="10" onclick="selectChoice('dailyGoal', '10', this)">
+          <span class="choice-icon">🔥</span>
+          <span class="choice-label">10 Minutes</span>
+          <span class="choice-desc">Steady learning pace</span>
+        </button>
+        <button type="button" class="ob-choice-btn time-btn" data-value="15" onclick="selectChoice('dailyGoal', '15', this)">
+          <span class="choice-icon">🌟</span>
+          <span class="choice-label">15 Minutes</span>
+          <span class="choice-desc">Serious daily commitment</span>
+        </button>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="btn btn-ghost" onclick="obBack()"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="button" class="btn btn-primary" id="ob-next-5" onclick="obNext()" disabled>Continue <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 6: Personalized Welcome -->
+    <div class="ob-step" id="ob-step-6">
+      <div class="ob-mascot-wrap">
+        <img src="assets/character/technopixie_celebrating.png"
+             alt="Technopixie celebrating"
+             class="ob-mascot"
+             onerror="this.src='assets/character/technopixie_happy.png'">
+      </div>
+      <div class="completion-badge-wrap">
+        <img src="assets/branding/completion_badge.png" alt="Adventure Ready Badge" class="completion-badge" onerror="this.style.display='none'">
+      </div>
+      <h2 class="ob-title" id="ob-welcome-title">Your Python Adventure Starts Here!</h2>
+      <div class="dialogue-bubble">
+        <p id="ob-welcome-message">"Your path is set! I'll be right by your side every step of the way. Let's make some magic happen!"</p>
+      </div>
+      <div class="ob-summary" id="ob-summary"></div>
+      <button type="button" class="btn btn-primary btn-large" onclick="finishOnboarding()">
+        <i data-lucide="rocket"></i> Start My Adventure!
+      </button>
+    </div>
+
+  </div><!-- end onboarding-overlay -->
+
+  <!-- ===================== MAIN APP ===================== -->
+  <div id="main-app" class="main-app hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="assets/branding/codequest_logo.png" alt="CodeQuest" class="sidebar-logo" onerror="this.style.display='none'">
+        <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close sidebar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar">
+          <img src="assets/branding/character_logo.png" alt="Player avatar" onerror="this.style.display='none'">
+        </div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-username" id="sidebar-username">Developer</span>
+          <span class="sidebar-lang" id="sidebar-lang">
+            <i class="devicon-python-plain colored"></i> Python
+          </span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <button type="button" class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')">
+          <i data-lucide="home"></i><span>Home</span>
+        </button>
+        <button type="button" class="nav-item" data-view="learn" onclick="navigateTo('learn')">
+          <i data-lucide="book-open"></i><span>Learn</span>
+        </button>
+        <button type="button" class="nav-item" data-view="practice" onclick="navigateTo('practice')">
+          <i data-lucide="code-2"></i><span>Practice</span>
+        </button>
+        <button type="button" class="nav-item" data-view="achievements" onclick="navigateTo('achievements')">
+          <i data-lucide="trophy"></i><span>Achievements</span>
+        </button>
+        <button type="button" class="nav-item" data-view="profile" onclick="navigateTo('profile')">
+          <i data-lucide="user"></i><span>Profile</span>
+        </button>
+        <button type="button" class="nav-item" data-view="settings" onclick="navigateTo('settings')">
+          <i data-lucide="settings"></i><span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="xp-mini">
+          <i data-lucide="star"></i>
+          <span id="sidebar-xp">0 XP</span>
+        </div>
+        <div class="streak-mini">
+          <i data-lucide="flame"></i>
+          <span id="sidebar-streak">0 day streak</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="app-main" id="app-main">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <button type="button" class="topbar-menu-btn" id="topbar-menu-btn" aria-label="Open menu" onclick="openSidebar()">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="topbar-brand">
+          <img src="assets/branding/codequest_icon.png" alt="CodeQuest" class="topbar-icon" onerror="this.style.display='none'">
+          <span class="topbar-title">CodeQuest</span>
+        </div>
+        <div class="topbar-stats">
+          <div class="topbar-stat xp-stat">
+            <i data-lucide="star"></i>
+            <span id="topbar-xp">0</span>
+          </div>
+          <div class="topbar-stat streak-stat">
+            <i data-lucide="flame"></i>
+            <span id="topbar-streak">0</span>
+          </div>
+          <button type="button" class="topbar-audio-btn" id="topbar-audio-btn" aria-label="Toggle audio" onclick="toggleMasterAudio()">
+            <i data-lucide="volume-2" id="audio-icon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW CONTAINER -->
+      <main class="view-container" id="view-container">
+
+        <!-- ===== DASHBOARD VIEW ===== -->
+        <section class="view active" id="view-dashboard" aria-label="Dashboard">
+          <div class="view-content">
+
+            <div class="dashboard-welcome">
+              <div class="welcome-text">
+                <h1 id="dashboard-greeting">Welcome back, Developer! 👋</h1>
+                <p id="dashboard-sub">Ready to continue your coding adventure?</p>
+              </div>
+              <div class="welcome-mascot">
+                <img src="assets/character/technopixie_idle_spritesheet.gif"
+                     alt="Technopixie"
+                     class="dashboard-mascot"
+                     onerror="this.src='assets/character/technopixie.png'">
+              </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon level-icon"><i data-lucide="award"></i></div>
+                <div class="stat-info">
+                  <span class="stat-value" id="stat-level">1</span>
+                  <span class="stat-label">Level</span>
+                  <span class="stat-sub" id="stat-level-name">Beginner</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon xp-icon"><i data-lucide="star"></i></div>
+                <div class="stat-info">
+                  <span class="stat-value" id="stat-xp">0</span>
+                  <span class="stat-label">Total XP</span>
+                  <span class="stat-sub" id="stat-xp-next">100 to next level</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon streak-icon"><i data-lucide="flame"></i></div>
+                <div class="stat-info">
+                  <span class="stat-value" id="stat-streak">0</span>
+                  <span class="stat-label">Day Streak</span>
+                  <span class="stat-sub">Keep it going!</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon lessons-icon"><i data-lucide="check-circle"></i></div>
+                <div class="stat-info">
+                  <span class="stat-value" id="stat-lessons">0</span>
+                  <span class="stat-label">Lessons Done</span>
+                  <span class="stat-sub" id="stat-lang-label">Python</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Goal -->
+            <div class="daily-goal-card card">
+              <div class="card-header">
+                <h3><i data-lucide="target"></i> Daily Goal</h3>
+                <span class="daily-goal-label" id="daily-goal-label">0 / 10 min</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar progress-bar--zero" id="daily-progress-bar"></div>
+              </div>
+              <p class="daily-goal-hint" id="daily-goal-hint">Complete a lesson to log progress!</p>
+            </div>
+
+            <!-- Continue Learning -->
+            <div class="continue-card card">
+              <div class="continue-card-left">
+                <div class="continue-lang-badge" id="continue-lang-badge">
+                  <i class="devicon-python-plain colored" id="continue-lang-icon"></i>
+                </div>
+                <div class="continue-info">
+                  <span class="continue-track" id="continue-track">Python Fundamentals</span>
+                  <h3 id="continue-lesson-title">Lesson 1: Welcome to Python</h3>
+                  <div class="continue-meta">
+                    <span><i data-lucide="clock"></i> ~5 min</span>
+                    <span id="continue-chapter">Chapter 1</span>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary" id="continue-btn" onclick="continueLesson()">
+                Continue <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+
+            <!-- XP Progress Bar -->
+            <div class="xp-progress-card card">
+              <div class="xp-progress-header">
+                <span><i data-lucide="zap"></i> Level Progress</span>
+                <span id="xp-progress-label">0 / 100 XP</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar xp-bar progress-bar--zero" id="xp-progress-bar"></div>
+              </div>
+            </div>
+
+            <!-- Recent Achievements -->
+            <div class="recent-achievements card">
+              <div class="card-header">
+                <h3><i data-lucide="trophy"></i> Recent Achievements</h3>
+                <button type="button" class="btn-link" onclick="navigateTo('achievements')">See all</button>
+              </div>
+              <div class="achievements-mini-list" id="achievements-mini-list">
+                <div class="achievement-empty">Complete lessons to earn achievements!</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===== LEARN VIEW ===== -->
+        <section class="view" id="view-learn" aria-label="Learning Path">
+          <div class="view-content">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title">Learning Path</h2>
+                <p class="view-subtitle" id="learn-subtitle">Python Fundamentals</p>
+              </div>
+              <div class="lang-switcher">
+                <span class="lang-switcher-label">Language:</span>
+                <div class="lang-switcher-btns" id="lang-switcher-btns">
+                  <!-- populated by JS -->
+                </div>
+              </div>
+            </div>
+            <div id="learning-path-container">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PRACTICE VIEW ===== -->
+        <section class="view" id="view-practice" aria-label="Practice">
+          <div class="view-content">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title">Practice</h2>
+                <p class="view-subtitle">Review and reinforce what you've learned</p>
+              </div>
+            </div>
+            <div id="practice-container">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== ACHIEVEMENTS VIEW ===== -->
+        <section class="view" id="view-achievements" aria-label="Achievements">
+          <div class="view-content">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title">Achievements</h2>
+                <p class="view-subtitle">Your coding milestones</p>
+              </div>
+            </div>
+            <div id="achievements-container">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== PROFILE VIEW ===== -->
+        <section class="view" id="view-profile" aria-label="Profile">
+          <div class="view-content">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title">Profile</h2>
+                <p class="view-subtitle">Your learning journey</p>
+              </div>
+            </div>
+            <div id="profile-container">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== SETTINGS VIEW ===== -->
+        <section class="view" id="view-settings" aria-label="Settings">
+          <div class="view-content">
+            <div class="view-header">
+              <div>
+                <h2 class="view-title">Settings</h2>
+                <p class="view-subtitle">Customize your experience</p>
+              </div>
+            </div>
+            <div id="settings-container">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </section>
+
+      </main><!-- end view-container -->
+    </div><!-- end app-main -->
+  </div><!-- end main-app -->
+
+  <!-- ===================== LESSON MODAL ===================== -->
+  <div id="lesson-modal" class="lesson-modal hidden" role="dialog" aria-modal="true" aria-label="Lesson">
+    <div class="lesson-modal-inner">
+
+      <!-- Lesson Header -->
+      <div class="lesson-header">
+        <button type="button" class="lesson-close-btn" onclick="closeLesson()" aria-label="Exit lesson">
+          <i data-lucide="x"></i>
+        </button>
+        <div class="lesson-progress-wrap">
+          <div class="lesson-progress-bar progress-bar--zero" id="lesson-progress-bar"></div>
+        </div>
+        <div class="lesson-header-info">
+          <span id="lesson-step-label">Step 1 of 5</span>
+        </div>
+      </div>
+
+      <!-- Lesson Body -->
+      <div class="lesson-body" id="lesson-body">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Lesson Footer -->
+      <div class="lesson-footer" id="lesson-footer">
+        <div class="lesson-feedback" id="lesson-feedback"></div>
+        <div class="lesson-footer-actions">
+          <button type="button" class="btn btn-primary lesson-check-btn hidden" id="lesson-check-btn" onclick="checkAnswer()">
+            Check Answer
+          </button>
+          <button type="button" class="btn btn-primary lesson-continue-btn hidden" id="lesson-continue-btn" onclick="lessonContinue()">
+            Continue <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== XP POPUP ===================== -->
+  <div id="xp-popup" class="xp-popup hidden" aria-live="polite">
+    <i data-lucide="star"></i>
+    <span id="xp-popup-amount">+5 XP</span>
+  </div>
+
+  <!-- ===================== ACHIEVEMENT POPUP ===================== -->
+  <div id="achievement-popup" class="achievement-popup hidden" aria-live="polite">
+    <img src="assets/branding/completion_badge.png" alt="Achievement" class="achievement-popup-img" onerror="this.style.display='none'">
+    <div class="achievement-popup-text">
+      <span class="achievement-popup-label">Achievement Unlocked!</span>
+      <span class="achievement-popup-name" id="achievement-popup-name">First Steps</span>
+    </div>
+  </div>
+
+  <!-- ===================== CONFIRM DIALOG ===================== -->
+  <div id="confirm-dialog" class="confirm-dialog hidden" role="alertdialog" aria-modal="true">
+    <div class="confirm-dialog-box">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-message">This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn btn-ghost" id="confirm-cancel-btn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
